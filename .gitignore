@@ -1,0 +1,14 @@
+# Compiled Dynamic libraries
+*.so
+
+#Python binaries
+*.pyc
+
+#Emacs temp files
+#*
+*~
+~*
+
+#OS X
+*.dSYM
+.DS_Store
