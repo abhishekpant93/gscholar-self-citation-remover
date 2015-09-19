@@ -1,8 +1,10 @@
 """
-Removes self-citations for the specified author from Google Scholar.
+Finds self-citation papers for the specified author from Google Scholar.
 """
 
+import bibtexparser
 import hashlib
+import html.entities as htmlent
 import optparse
 import random
 import re
@@ -16,64 +18,152 @@ GSCHOLAR_QUERY_PATH = "/scholar"
 # Max permissible search results per page.
 NR = 20
 
+
+def _unescape_html_entities(html):
+    # Author: Fredrik Lundh
+    # http://effbot.org/zone/re-sub.htm#unescape-html
+    def fixup(m):
+        html = m.group(0)
+        if html[:2] == "&#":
+            # character reference
+            try:
+                if html[:3] == "&#x":
+                    return chr(int(html[3:-1], 16))
+                else:
+                    return chr(int(html[2:-1]))
+            except ValueError:
+                pass
+        else:
+            # named entity9
+            try:
+                html = chr(htmlent.name2codepoint[html[1:-1]])
+            except KeyError:
+                pass
+        return html
+
+    return re.sub("&#?\w+;", fixup, html)
+
+
 def _gen_fake_google_id():
-	return hashlib.md5(str(random.random()).encode("utf-8")).hexdigest()[:16]
+    return hashlib.md5(str(random.random()).encode("utf-8")).hexdigest()[:16]
+
 
 def _do_gscholar_request(path, gid, params={}):
-	print 'params: ', params
-  	return requests.get(GSCHOLAR_BASE_URL + path, params=params,
-  	headers={'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_5) \
-  	AppleWebKit/600.8.9 (KHTML, like Gecko) Version/8.0.8 Safari/600.8.9',
-  	# Set CF = 4 in cookie to display BibTex citation link.
-       'Cookie': 'GSP=ID=%s:CF=4:NR=%d' % (gid, NR)})
+    print 'params: ', params
+    return requests.get(GSCHOLAR_BASE_URL + path,
+                        params=params,
+                        headers={
+                            # Set CF = 4 in cookie to display BibTex citation link.
+                            'Cookie': 'GSP=ID=%s:CF=4:NR=%d' % (gid, NR)
+                        })
+
 
 def _is_actual_paper(title):
-	return "CITATION" not in title
+    return "CITATION" not in title
+
 
 def _filter_title(title):
-	return re.sub(r'\[.*\]', '', title).strip()
+    return re.sub(r'\[.*\]', '', title).strip()
+
+
+def _extract_bib_links(html):
+    return [_unescape_html_entities(m) for m in \
+     re.compile(r'<a href="(/scholar\.bib\?[^"]*)').findall(html)]
+
+
+def _extract_bib_from_link(link, gid):
+    return _do_gscholar_request(link, gid).text
+
+
+def _is_self_citation(author, paper_authors):
+    fname = author.split()[0].lower()
+    lname = author.split()[-1].lower()
+    for a in paper_authors.split("and"):
+        if fname in a.lower() and lname in a.lower():
+            return True
+    return False
+
 
 """
 Returns a list of tuples consisting of paper title and the 
 corresponding citations url, for the specified author.
 """
 def get_papers_by_author(author):
-	query = 'author:"%s"' % author
-	gid = _gen_fake_google_id()
-	author_papers = []
-	# Handle pagination.
-	start = 0
-	while True:
-		print 'start: ', start
-		html = _do_gscholar_request(
-			GSCHOLAR_QUERY_PATH, gid, {'q':query, 'start': start}).text
-		soup = BeautifulSoup(html, 'html.parser')
-		papers = soup.findAll("div", class_="gs_ri")
-		if len(papers) == 0:
-			break
-		for p in papers:
-			try:
-				title = p.find("h3", class_="gs_rt").text
-				if not _is_actual_paper(title):
-					continue
-				cites = p.find("div", class_="gs_fl").find("a")
-				if "Cited by" in cites.text:
-					author_papers.append((_filter_title(title), cites['href']))
-			except Exception, e:
-				raise e
-		start += NR
-		time.sleep(5)
-	return author_papers
+    query = 'author:"%s"' % author
+    gid = _gen_fake_google_id()
+    author_papers = []
+    start = 0
+    # Handles pagination. Currently just fetches the first page to reduce
+    # network requests and avoid throttling.
+    while start < NR:
+        print 'start: ', start
+        html = _do_gscholar_request(
+            GSCHOLAR_QUERY_PATH, gid, {'q': query,
+                                       'start': start}).text
+        soup = BeautifulSoup(html, 'html.parser')
+        papers = soup.findAll("div", class_="gs_ri")
+        if len(papers) == 0:
+            break
+        for p in papers:
+            try:
+                title = p.find("h3", class_="gs_rt").text
+                if not _is_actual_paper(title):
+                    continue
+                cites = p.find("div", class_="gs_fl").find("a")
+                if "Cited by" in cites.text:
+                    author_papers.append((_filter_title(title), cites['href']))
+            except Exception, e:
+                raise e
+        start += NR
+        time.sleep(5)
+    return author_papers
+
+
+"""
+Returns BibTex entries corresponding to the self-citation papers.
+"""
+def find_self_citations(author, paper):
+    print 'finding self citations for: ', author, paper
+    title, citations_url = paper
+    gid = _gen_fake_google_id()
+    start = 0
+    total_citations = 0
+    self_citation_papers = []
+    while True:
+        html = _do_gscholar_request(citations_url, gid, {'start': start}).text
+        links = _extract_bib_links(html)
+        if len(links) == 0:
+            break
+        total_citations += len(links)
+        for link in links:
+            bib = bibtexparser.loads(_extract_bib_from_link(
+                link, gid)).entries[0]
+            print bib
+            if _is_self_citation(author, bib['author']):
+                print '    #### found self-citation...'
+                self_citation_papers.append(bib)
+            time.sleep(1)
+        start += NR
+    print '-------------------------------------------------------------------'
+    print 'percentage of self-citations for this paper: %f' % \
+     (100.0 * float(len(self_citation_papers)) / total_citations)
+    return self_citation_papers
+
 
 def main():
-	parser = optparse.OptionParser(
-		'Usage: python self-citation-remover.py "AUTHOR"')
-	(options, args) = parser.parse_args()
-	if len(args) != 1:
-		parser.error("Please specify author name.")
-		sys.exit(1)
-	author = args[0]
-	print get_papers_by_author(author)
+    parser = optparse.OptionParser(
+        'Usage: python self-citation-remover.py "AUTHOR"')
+    (options, args) = parser.parse_args()
+    if len(args) != 1:
+        parser.error("Please specify author name.")
+        sys.exit(1)
+    author = args[0]
+    papers = get_papers_by_author(author)
+    self_citation_papers = find_self_citations(author, papers[1])
+    print '-------------------------------------------------------------------'
+    print 'self-citation paper details:'
+    print self_citation_papers
+
 
 if __name__ == '__main__':
-	main()
+    main()
