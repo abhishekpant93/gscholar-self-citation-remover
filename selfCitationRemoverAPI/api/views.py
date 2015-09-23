@@ -15,6 +15,7 @@ def getSelfCitations(request):
 	authorName = request.GET.get('name', None)
 	paperTitle = request.GET.get('title', None)
 	citationsURL = request.GET.get('url', None)
+	print "Attempting to get : ", citationsURL
 	if (authorName) and (paperTitle) and (citationsURL):
 		return HttpResponse(json.dumps(self_citation_remover.find_self_citations(authorName, (paperTitle, citationsURL))))
 	else:

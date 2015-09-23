@@ -128,7 +128,9 @@ def find_self_citations(author, paper):
     gid = _gen_fake_google_id()
     start = 0
     total_citations = 0
+    self_citation_info = {}
     self_citation_papers = []
+
     while True:
         html = _do_gscholar_request(citations_url, gid, {'start': start}).text
         links = _extract_bib_links(html)
@@ -144,10 +146,15 @@ def find_self_citations(author, paper):
                 self_citation_papers.append(bib)
             time.sleep(1)
         start += NR
+
+    self_citation_info['selfCitationsRatio'] = str(float(len(self_citation_papers))/total_citations)
+    self_citation_info['selfCitations'] = self_citation_papers
+
     print '-------------------------------------------------------------------'
     print 'percentage of self-citations for this paper: %f' % \
-     (100.0 * float(len(self_citation_papers)) / total_citations)
-    return self_citation_papers
+        (100.0 * float(len(self_citation_papers)) / total_citations)
+
+    return self_citation_info
 
 
 def main():
