@@ -147,12 +147,13 @@ def find_self_citations(author, paper):
             time.sleep(1)
         start += NR
 
-    self_citation_info['selfCitationsRatio'] = str(float(len(self_citation_papers))/total_citations)
-    self_citation_info['selfCitations'] = self_citation_papers
+    self_citation_info['ratio'] = float(
+        len(self_citation_papers)) / total_citations
+    self_citation_info['papers'] = self_citation_papers
 
     print '-------------------------------------------------------------------'
     print 'percentage of self-citations for this paper: %f' % \
-        (100.0 * float(len(self_citation_papers)) / total_citations)
+        (100.0 * self_citation_info['ratio'])
 
     return self_citation_info
 
@@ -166,11 +167,12 @@ def main():
         sys.exit(1)
     author = args[0]
     papers = get_papers_by_author(author)
+    print 'papers by %s:' % author
     print papers
-    self_citation_papers = find_self_citations(author, papers[1])
+    self_citation_info = find_self_citations(author, papers[1])
     print '-------------------------------------------------------------------'
-    print 'self-citation paper details:'
-    print self_citation_papers
+    print 'self-citation details for this paper:'
+    print self_citation_info
 
 
 if __name__ == '__main__':
