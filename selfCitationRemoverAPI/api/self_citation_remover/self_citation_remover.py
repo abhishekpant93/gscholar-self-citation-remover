@@ -3,18 +3,21 @@ Finds self-citation papers for the specified author from Google Scholar.
 """
 
 import bibtexparser
+import grequests
 import hashlib
 import htmlentitydefs as htmlent
 import optparse
 import random
 import re
 import requests
+import sys
 import time
 
 from bs4 import BeautifulSoup
 
 GSCHOLAR_BASE_URL = "http://scholar.google.com"
 GSCHOLAR_QUERY_PATH = "/scholar"
+MAX_PARALLEL_CONNECTIONS = 5
 # Max permissible search results per page.
 NR = 20
 
@@ -88,6 +91,7 @@ def _is_self_citation(author, paper_authors):
 Returns a list of tuples consisting of paper title and the 
 corresponding citations url, for the specified author.
 """
+
 def get_papers_by_author(author):
     query = 'author:"%s"' % author
     gid = _gen_fake_google_id()
@@ -122,6 +126,7 @@ def get_papers_by_author(author):
 """
 Returns BibTex entries corresponding to the self-citation papers.
 """
+
 def find_self_citations(author, paper):
     print 'finding self citations for: ', author, paper
     title, citations_url = paper
@@ -133,20 +138,25 @@ def find_self_citations(author, paper):
 
     while True:
         html = _do_gscholar_request(citations_url, gid, {'start': start}).text
-        links = _extract_bib_links(html)
+        links = [GSCHOLAR_BASE_URL + link for link in _extract_bib_links(html)]
+        print 'links: ', links
         if len(links) == 0:
             break
         total_citations += len(links)
-        for link in links:
-            bib = bibtexparser.loads(_extract_bib_from_link(
-                link, gid)).entries[0]
+        # Create a set of unsent requests.
+        rs = (grequests.get(link,
+                            headers={'Cookie': 'GSP=ID=%s:CF=4' % gid})
+              for link in links)
+        # Send requests in parallel. Throttle to MAX_PARALLEL_CONNECTIONS.
+        resp = grequests.map(rs, size=MAX_PARALLEL_CONNECTIONS)
+        for r in resp:
+            bib = bibtexparser.loads(r.text).entries[0]
             print bib
             if _is_self_citation(author, bib['author']):
                 print '    #### found self-citation...'
                 self_citation_papers.append(bib)
-            time.sleep(1)
         start += NR
-
+        time.sleep(2)
     self_citation_info['ratio'] = float(
         len(self_citation_papers)) / total_citations
     self_citation_info['papers'] = self_citation_papers
@@ -169,6 +179,9 @@ def main():
     papers = get_papers_by_author(author)
     print 'papers by %s:' % author
     print papers
+    if len(papers) == 0:
+        print 'blocked! exiting ...'
+        sys.exit()
     self_citation_info = find_self_citations(author, papers[1])
     print '-------------------------------------------------------------------'
     print 'self-citation details for this paper:'
