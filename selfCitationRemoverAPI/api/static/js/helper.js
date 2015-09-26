@@ -1,10 +1,10 @@
-var test_local = true;
-// var test_local = false;
+// var test_local = true;
+var test_local = false;
 var base_url = '';
 if (test_local){
 	base_url = 'http://127.0.0.1:8000/'
 }else{
-	base_url = '';
+	base_url = 'http://social-comp.elasticbeanstalk.com/api/';
 }
 
 

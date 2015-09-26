@@ -163,7 +163,7 @@ def find_self_citations(author, paper):
     except Exception as e:
         self_citation_info['ratio'] = -1.0;
     self_citation_info["total_citations"] = total_citations
-    self_citation_info["self_citation_papers"] = len(self_citation_papers))
+    self_citation_info["self_citation_papers"] = len(self_citation_papers)
     self_citation_info['papers'] = self_citation_papers
 
     print '-------------------------------------------------------------------'
