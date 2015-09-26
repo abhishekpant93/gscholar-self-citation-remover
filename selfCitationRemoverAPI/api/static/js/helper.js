@@ -135,22 +135,32 @@ function analyze_self_citation(passed_data){
 
 function display_self_citation_info(result){
 	
-	var author_msg = "Author List = " + result.papers[0].author;
-	var publishing_info = "Pub Info = " + result.papers[0].booktitle;
-	var year_ino = "Year = " + result.papers[0].year;
 	var total_citations = result.total_citations;
     var self_citation_papers = result.self_citation_papers;
 	var self_citation_info = "Ratio = " + result.ratio + "(" + self_citation_papers + "/" + total_citations + ")";
+	
 
-	var data = [author_msg,publishing_info,year_ino,self_citation_info];
+	var paper_list = result.papers;
+	var msg_list = [self_citation_info];
+	for (i in paper_list){
+		var author_msg = "Author List = " + result.papers[0].author;
+		var publishing_info = "Pub Info = " + result.papers[0].booktitle;
+		var year_info = "Year = " + result.papers[0].year;
 
-	var message = "<p>" + data.join("</p><p>") + "</p>";
+		var data = [author_msg,publishing_info,year_info];
+		
+		var message = "<p>" + data.join("</p><p>") + "</p>";
+	
+		msg_list.push(message);
+	}
 
-	var title = result.papers[0].title;
+	var message ="<p>" +  msg_list.join("</p>------------------<p>") + "</p>";
+
+	
 
 	bootbox.dialog({
 		message: message,
-	  	title: title,
+	  	title: "Self Citing Papers",
 	  	buttons: {
 	    	success: {
 	      		label: "Success!",
