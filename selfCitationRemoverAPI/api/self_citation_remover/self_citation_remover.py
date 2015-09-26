@@ -157,8 +157,13 @@ def find_self_citations(author, paper):
                 self_citation_papers.append(bib)
         start += NR
         time.sleep(2)
-    self_citation_info['ratio'] = float(
-        len(self_citation_papers)) / total_citations
+    try:
+        self_citation_info['ratio'] = float(
+            len(self_citation_papers)) / total_citations
+    except Exception as e:
+        self_citation_info['ratio'] = -1.0;
+    self_citation_info["total_citations"] = total_citations
+    self_citation_info["self_citation_papers"] = self_citation_papers
     self_citation_info['papers'] = self_citation_papers
 
     print '-------------------------------------------------------------------'

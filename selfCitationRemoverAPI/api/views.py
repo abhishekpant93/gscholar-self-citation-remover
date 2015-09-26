@@ -7,8 +7,9 @@ from self_citation_remover import self_citation_remover
 def getAuthorInfo(request):
     authorName = request.GET.get('name', None)
     if authorName:
-        return HttpResponse(json.dumps(
-            self_citation_remover.get_papers_by_author(authorName)))
+        # return HttpResponse(json.dumps({"response_json":json.dumps(
+        #     self_citation_remover.get_papers_by_author(authorName)),"success":"true"}))
+        return HttpResponse(json.dumps(self_citation_remover.get_papers_by_author(authorName)))
     else:
         return HttpResponse("Usage: Add query parameter 'name'")
 

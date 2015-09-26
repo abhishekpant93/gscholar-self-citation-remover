@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+	    <meta charset="utf-8">
+	    <meta content="IE=edge" http-equiv="X-UA-Compatible">
+	    <meta content="width=device-width, initial-scale=1" name="viewport">
+	    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+	    <meta content="" name="description">
+	    <meta content="" name="author">
+	    <title>Self Citation Analyzer</title>
+	    <!-- Latest compiled and minified CSS -->
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+		<!-- Optional theme -->
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap-theme.min.css">
+		<link rel="stylesheet" href="external/datatables.min.css">
+	    <link rel="stylesheet" href="https://cdn.datatables.net/1.10.9/css/jquery.dataTables.min.css">
+	</head>
+	<body role="document">
+	<h3>Self Citation Analyzer !!</h3>
+	<hr>
+	<div class="form-group col-lg-1">
+		<label for="author_name">Author Name</label>
+		<input type="text" class="form-control input-sm" id="author_name" value = "Niloy Ganguly">
+		<button id = "fetch_papers" class="btn btn-default" >Fetch Papers</button>
+	</div>
+
+	<div id = "paper_list">
+        <table id="paper_list_table">
+        </table>
+    </div>
+
+
+
+	<div style="margin: 0px; padding: 0px; position: absolute; right: 3px; top: 3px; width: auto; display: none;" id="ajaxBusy"><p><img src="images/loading.gif"></p></div>
+
+	<!--script includes start here-->
+	<script src="http://code.jquery.com/jquery-1.9.1.js"></script>
+	<script src="http://code.jquery.com/ui/1.10.2/jquery-ui.js"></script>
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+	<script src="js/helper.js"></script>
+	<script src="external/datatables.min.js"></script>
+	<script src="external/bootbox.min.js"></script>
+	</body>
+</html>
