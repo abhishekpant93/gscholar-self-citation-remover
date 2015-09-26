@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Self Citation Analyzer</title>
+        <link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+        <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.9/css/jquery.dataTables.min.css">
+        <link rel="stylesheet" type="text/css" href="static/css/search.css">
+    </head>
+    <body>
+        <div class="container">
+            <h1 align="center">Self-Citation Analyzer</h1>
+            <hr style="margin:20;">
+            <div class="row">
+                <div class="col-md-6 center">
+                    <h3 align="center">Enter author name</h3>
+                    <div id="custom-search-input">
+                        <div class="input-group col-md-12">
+                            <input type="text" id="author_name" class="form-control input-lg" placeholder="e.g. Animesh Mukherjee" />
+                            <span class="input-group-btn">
+                            <button id="fetch-papers" class="btn btn-info btn-lg" type="button">
+                            <i class="glyphicon glyphicon-search"></i>
+                            </button>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id = "paper_list">
+                <table id="paper_list_table">
+                </table>
+            </div>
+            <div style="margin: 0px; padding: 0px; position: absolute; right: 3px; top: 3px; width: auto; display: none;" id="ajax-busy">
+                <p><img src="static/images/loading.gif"></p>
+            </div>
+        </div>
+        <!-- Modal -->
+        <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                        <h4 class="modal-title" id="myModalLabel">Self-Citation Information</h4>
+                    </div>
+                    <div class="modal-body">
+                        <div id="ajax-busy-modal" align="center"><img style="width:auto;" src="static/images/loading.gif"></div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+        <script src="http://code.jquery.com/ui/1.10.2/jquery-ui.js"></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+        <script src="https://cdn.datatables.net/1.10.9/js/jquery.dataTables.min.js"></script>
+        <script src="static/js/helper.js"></script>
+    </body>
+</html>

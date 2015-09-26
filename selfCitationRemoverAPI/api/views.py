@@ -1,9 +1,12 @@
 import json
 
-from django.shortcuts import render
+from django.shortcuts import render_to_response
 from django.http import HttpResponse
 from self_citation_remover import self_citation_remover
 
+def search(request):
+    return render_to_response('search.html')
+    
 def getAuthorInfo(request):
     authorName = request.GET.get('name', None)
     if authorName:

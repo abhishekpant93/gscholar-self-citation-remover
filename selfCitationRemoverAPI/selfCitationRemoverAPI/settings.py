@@ -55,7 +55,7 @@ ROOT_URLCONF = 'selfCitationRemoverAPI.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': ['api/static'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [

@@ -17,7 +17,7 @@ from bs4 import BeautifulSoup
 
 GSCHOLAR_BASE_URL = "http://scholar.google.com"
 GSCHOLAR_QUERY_PATH = "/scholar"
-MAX_PARALLEL_CONNECTIONS = 5
+MAX_PARALLEL_CONNECTIONS = 2
 # Max permissible search results per page.
 NR = 20
 
@@ -163,9 +163,10 @@ def find_self_citations(author, paper):
     except Exception as e:
         self_citation_info['ratio'] = -1.0;
     self_citation_info["total_citations"] = total_citations
-    self_citation_info["self_citation_papers"] = len(self_citation_papers))
+    self_citation_info["self_citation_papers"] = len(self_citation_papers)
     self_citation_info['papers'] = self_citation_papers
 
+    print self_citation_info
     print '-------------------------------------------------------------------'
     print 'percentage of self-citations for this paper: %f' % \
         (100.0 * self_citation_info['ratio'])
