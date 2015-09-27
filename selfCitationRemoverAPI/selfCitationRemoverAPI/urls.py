@@ -22,3 +22,8 @@ urlpatterns = [
     url(r'^getAuthorInfo/', views.getAuthorInfo),
     url(r'^getSelfCitations/', views.getSelfCitations),	
 ]
+
+# if settings.DEBUG:
+# urlpatterns += patterns('',
+#     (r'^stati_directory/(?P<path>.*)$', 'django.views.static.serve',
+#     {'document_root':settings.STATIC_ROOT}),)

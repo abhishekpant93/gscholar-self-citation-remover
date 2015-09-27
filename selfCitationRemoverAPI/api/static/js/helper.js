@@ -96,6 +96,7 @@ function make_ajax_request_get(base_url,end_point,data,success_function){
 		contentType: "application/json",
 		dataType:'json',
 		data : data,
+		timeout: 20000 ,
 		success : function(result){
 			success_function(result);
 		},
