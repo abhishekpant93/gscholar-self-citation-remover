@@ -2,6 +2,7 @@ BeautifulSoup==3.2.1
 beautifulsoup4==4.4.0
 bibtexparser==0.6.1
 Django==1.8.4
+django-cors-headers==1.1.0
 gevent==1.0.2
 greenlet==0.4.9
 grequests==0.2.0
