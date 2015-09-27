@@ -4,7 +4,7 @@ var base_url = '';
 if (test_local){
 	base_url = 'http://127.0.0.1:8000/'
 }else{
-	base_url = 'http://social-comp.elasticbeanstalk.com/api/';
+	base_url = 'http://social-comp.elasticbeanstalk.com/';
 }
 
 
