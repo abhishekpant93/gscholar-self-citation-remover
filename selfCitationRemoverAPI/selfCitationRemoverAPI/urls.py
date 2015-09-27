@@ -21,6 +21,8 @@ urlpatterns = [
     #url(r'^admin/', include(admin.site.urls)),
     url(r'^getAuthorInfo/', views.getAuthorInfo),
     url(r'^getSelfCitations/', views.getSelfCitations),	
+    url(r'^getAuthorInfo_local/', views.getAuthorInfo_local),
+    url(r'^getSelfCitations_local/', views.getSelfCitations_local), 
 ]
 
 # if settings.DEBUG:

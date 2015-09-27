@@ -1,5 +1,5 @@
-// var test_local = true;
-var test_local = false;
+var test_local = true;
+// var test_local = false;
 var base_url = '';
 if (test_local){
 	base_url = 'http://127.0.0.1:8000/'
@@ -43,7 +43,7 @@ function fetch_papers(){
 	}
 	var data = {};
 	data["name"] = author_name;
-	var end_point = "getAuthorInfo";
+	var end_point = "getAuthorInfo_local";
 	make_ajax_request_get(base_url,end_point,data,update_paper_list);
 	return;
 }
@@ -130,7 +130,7 @@ function analyze_self_citation(passed_data){
 	data["name"] = name;
 	data["title"] = title;
 	data["url"] = url;
-	var end_point = "getSelfCitations";
+	var end_point = "getSelfCitations_local";
 	make_ajax_request_get(base_url,end_point,data,display_self_citation_info);
 }
 

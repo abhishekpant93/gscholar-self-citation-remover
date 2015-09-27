@@ -4,6 +4,9 @@ from django.shortcuts import render
 from django.http import HttpResponse
 from self_citation_remover import self_citation_remover
 
+import requests
+import urllib
+
 def getAuthorInfo(request):
     authorName = request.GET.get('name', None)
     if authorName:
@@ -26,3 +29,31 @@ def getSelfCitations(request):
     else:
         return HttpResponse(
             "Usage: Add query parameters 'name', 'title' and 'url'")
+
+def getAuthorInfo_local(request):
+    name = request.GET.get('name', None)
+    data = {}
+    data["name"] = name
+    url = "http://social-comp.elasticbeanstalk.com/getAuthorInfo"
+    param_text = urllib.urlencode(data)
+    r = requests.get(url + '?' + param_text)
+
+    # print r.text
+
+    return HttpResponse(r.text)
+
+def getSelfCitations_local(request):
+    name = request.GET.get('name', None)
+    title = request.GET.get('title', None)
+    url = request.GET.get('url', None)
+
+    data = {}
+    data["name"] = name
+    data["title"] = title
+    data["url"] = url
+    url = "http://social-comp.elasticbeanstalk.com/getSelfCitations"
+    param_text = urllib.urlencode(data)
+    r = requests.get(url + '?' + param_text)
+
+    return HttpResponse(r.text)
+    
