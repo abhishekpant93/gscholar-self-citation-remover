@@ -12,14 +12,21 @@ import re
 import requests
 import sys
 import time
+import os
+import json
 
 from bs4 import BeautifulSoup
 
-GSCHOLAR_BASE_URL = "http://scholar.google.com"
+#os.environ['NO_PROXY'] = 'scholar.google.com'
+
+GSCHOLAR_BASE_URL = "https://scholar.google.com"
 GSCHOLAR_QUERY_PATH = "/scholar"
 MAX_PARALLEL_CONNECTIONS = 2
+NO_OF_QUERIES = 0
+
+##USER_AGENT = "Mozilla/5.0 (X11; Linux i686) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/45.0.2454.101 Safari/537.36"
 # Max permissible search results per page.
-NR = 20
+NR = 100
 
 
 def _unescape_html_entities(html):
@@ -52,12 +59,16 @@ def _gen_fake_google_id():
 
 
 def _do_gscholar_request(path, gid, params={}):
+    global NO_OF_QUERIES
     print 'params: ', params
+    NO_OF_QUERIES += 1
+    print "Queries done", NO_OF_QUERIES
     return requests.get(GSCHOLAR_BASE_URL + path,
                         params=params,
                         headers={
                             # Set CF = 4 in cookie to display BibTex citation link.
-                            'Cookie': 'GSP=ID=%s:CF=4:NR=%d' % (gid, NR)
+							##'user-agent' : USER_AGENT,
+                            'cookie': 'GSP=ID=%s:CF=4:NR=%d' % (gid, NR)
                         })
 
 
@@ -118,7 +129,7 @@ def get_papers_by_author(author):
                     author_papers.append((_filter_title(title), cites['href']))
             except Exception, e:
                 raise e
-        start += NR
+        start += 20
         time.sleep(5)
     return author_papers
 
@@ -135,28 +146,100 @@ def find_self_citations(author, paper):
     total_citations = 0
     self_citation_info = {}
     self_citation_papers = []
+    linkDict = {}
+    linkID = 0
 
     while True:
+
+    	## Commenting out the parallelization and increasing the sleep time
+
+        # html = _do_gscholar_request(citations_url, gid, {'start': start}).text
+        # links = [GSCHOLAR_BASE_URL + link for link in _extract_bib_links(html)]
+        # print 'links: ', links
+        # if len(links) == 0:
+        #     break
+        # total_citations += len(links)
+        
+
+        # # Create a set of unsent requests.
+        # rs = (grequests.get(link,
+        #                     headers={'Cookie': 'GSP=ID=%s:CF=4' % gid})
+        #       for link in links)
+        # # Send requests in parallel. Throttle to MAX_PARALLEL_CONNECTIONS.
+        # resp = grequests.map(rs, size=MAX_PARALLEL_CONNECTIONS)
+        # for r in resp:
+        #     bib = bibtexparser.loads(r.text).entries[0]
+        #     print bib
+        #     if _is_self_citation(author, bib['author']):
+        #         print '    #### found self-citation...'
+        #         self_citation_papers.append(bib)
+        # start += NR
+        # time.sleep(2)
+
+        # for link in links:
+        #     bib = bibtexparser.loads(link.text).entries[0]
+        #     print bib
+        #     if _is_self_citation(author, bib['author']):
+        #         print '    #### found self-citation...'
+        #         self_citation_papers.append(bib)
+        #     time.sleep(random.randint(30,40))
+
+        # start += NR
+
         html = _do_gscholar_request(citations_url, gid, {'start': start}).text
-        links = [GSCHOLAR_BASE_URL + link for link in _extract_bib_links(html)]
-        print 'links: ', links
+        links = _extract_bib_links(html)
         if len(links) == 0:
             break
         total_citations += len(links)
-        # Create a set of unsent requests.
-        rs = (grequests.get(link,
-                            headers={'Cookie': 'GSP=ID=%s:CF=4' % gid})
-              for link in links)
-        # Send requests in parallel. Throttle to MAX_PARALLEL_CONNECTIONS.
-        resp = grequests.map(rs, size=MAX_PARALLEL_CONNECTIONS)
-        for r in resp:
-            bib = bibtexparser.loads(r.text).entries[0]
-            print bib
+
+        
+
+        for link in links:
+        	linkDict[link] = linkID
+        	linkID += 1
+
+        
+
+        for link in links:
+
+            linkFileName = "../data/"+author + "/"+ paper[0]  + "/paper"+ str(linkDict[link]) + ".json"
+            bib = {}
+            
+            if not os.path.exists(linkFileName):
+
+                bib = bibtexparser.loads(_extract_bib_from_link(
+                    link, gid)).entries[0]
+                print bib
+                slpTime = random.randint(15, 20)
+                print "Sleeping ", slpTime, " seconds..."
+                time.sleep(slpTime)
+
+                with open(linkFileName, "w") as outfile:
+                    json.dump(bib, outfile)
+
+            else:
+
+                with open(linkFileName, "r") as data_file:
+                    bib = json.load(data_file)
+
+                print bib
+
+            
             if _is_self_citation(author, bib['author']):
                 print '    #### found self-citation...'
                 self_citation_papers.append(bib)
+                
+        slpTime = random.randint(10, 15)
+        print "Sleeping ", slpTime, " seconds..."
+        time.sleep(slpTime)
+
         start += NR
-        time.sleep(2)
+
+
+    with open("../data/" + author + "/" + paper[0] + "/index.json", "w") as linkIndex:
+        json.dump(linkDict, linkIndex)
+        print "Dumped data to " + "../data/" + author + "/" + paper[0] + "/index.json"
+
     try:
         self_citation_info['ratio'] = float(
             len(self_citation_papers)) / total_citations
@@ -188,11 +271,44 @@ def main():
     if len(papers) == 0:
         print 'blocked! exiting ...'
         sys.exit()
-    self_citation_info = find_self_citations(author, papers[1])
-    print '-------------------------------------------------------------------'
-    print 'self-citation details for this paper:'
-    print self_citation_info
 
+    ## Check if folder for an author exists and create one if it doesn't
+
+    if not os.path.exists("../data/" + author):
+    	os.makedirs("../data/" + author)
+
+
+    for paper in papers:
+        
+
+        
+        paperFolderPath = "../data/" + author + "/" + paper[0]
+
+        ## Check if info for paper already exists (in a JSON) and make the call if it doesn't
+
+        if not os.path.exists(paperFolderPath):
+        	os.makedirs(paperFolderPath)
+
+
+        if os.path.exists(paperFolderPath + "/index.json"):
+        	## If index exists, the paper is already completed
+        	continue
+
+    	startTime = time.time()
+    	self_citation_info = find_self_citations(author, paper)
+    	endTime = time.time()
+    	print "The last paper took ", str(endTime-startTime), " seconds to compute self citations."
+
+        
+    	with open(paperFolderPath + "/selfCitationInfo.json", 'w') as outfile:
+    		json.dump(self_citation_info, outfile)
+			
+		print "Written self citation info for " + paper[0] + " to file location : " + paperFolderPath
+
+
+		print '-------------------------------------------------------------------'
+		print 'self-citation details for this paper:'
+		print self_citation_info	    
 
 if __name__ == '__main__':
     main()
