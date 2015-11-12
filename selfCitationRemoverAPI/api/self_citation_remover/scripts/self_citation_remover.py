@@ -17,7 +17,7 @@ import json
 
 from bs4 import BeautifulSoup
 
-#os.environ['NO_PROXY'] = 'scholar.google.com'
+os.environ['NO_PROXY'] = 'scholar.google.com'
 
 GSCHOLAR_BASE_URL = "https://scholar.google.com"
 GSCHOLAR_QUERY_PATH = "/scholar"
@@ -26,7 +26,7 @@ NO_OF_QUERIES = 0
 
 ##USER_AGENT = "Mozilla/5.0 (X11; Linux i686) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/45.0.2454.101 Safari/537.36"
 # Max permissible search results per page.
-NR = 100
+NR = 20
 
 
 def _unescape_html_entities(html):
@@ -107,15 +107,27 @@ def get_papers_by_author(author):
     query = 'author:"%s"' % author
     gid = _gen_fake_google_id()
     author_papers = []
+    author_link = ""
     start = 0
     # Handles pagination. Currently just fetches the first page to reduce
     # network requests and avoid throttling.
-    while start < NR:
+    while start < 100:
         print 'start: ', start
         html = _do_gscholar_request(
             GSCHOLAR_QUERY_PATH, gid, {'q': query,
                                        'start': start}).text
         soup = BeautifulSoup(html, 'html.parser')
+
+        if start == 0:
+            # Get author page link
+            try:
+                author_link = _unescape_html_entities(soup.find("h4", class_= "gs_rt2").find("a")['href'])
+            except Exception, e:
+                raise e
+
+
+
+
         papers = soup.findAll("div", class_="gs_ri")
         if len(papers) == 0:
             break
@@ -129,9 +141,9 @@ def get_papers_by_author(author):
                     author_papers.append((_filter_title(title), cites['href']))
             except Exception, e:
                 raise e
-        start += 20
-        time.sleep(5)
-    return author_papers
+        start += NR
+        time.sleep(10)
+    return author_link, author_papers
 
 
 """
@@ -210,7 +222,7 @@ def find_self_citations(author, paper):
                 bib = bibtexparser.loads(_extract_bib_from_link(
                     link, gid)).entries[0]
                 print bib
-                slpTime = random.randint(15, 20)
+                slpTime = random.randint(35, 40)
                 print "Sleeping ", slpTime, " seconds..."
                 time.sleep(slpTime)
 
@@ -264,9 +276,10 @@ def main():
     if len(args) != 1:
         parser.error("Please specify author name.")
         sys.exit(1)
-    author = args[0]
-    papers = get_papers_by_author(author)
+    author = args[0].decode('utf-8')
+    author_link, papers = get_papers_by_author(author)
     print 'papers by %s:' % author
+    print 'author link :', author_link
     print papers
     if len(papers) == 0:
         print 'blocked! exiting ...'
@@ -274,13 +287,13 @@ def main():
 
     ## Check if folder for an author exists and create one if it doesn't
 
+    ##paper_links = get_paper_links_by_author(author_link)
+
     if not os.path.exists("../data/" + author):
     	os.makedirs("../data/" + author)
 
 
     for paper in papers:
-        
-
         
         paperFolderPath = "../data/" + author + "/" + paper[0]
 
@@ -288,6 +301,10 @@ def main():
 
         if not os.path.exists(paperFolderPath):
         	os.makedirs(paperFolderPath)
+
+        # if not os.path.exists(paperFolderPath + "/coAuthors.txt"):
+        #     add_coauthor_info(paperFolderPath)
+
 
 
         if os.path.exists(paperFolderPath + "/index.json"):
